@@ -169,7 +169,7 @@ export async function runFullScan(admin: any, shop: string) {
       activeProducts: activeCount,
       draftProducts:  draftCount,
       riskyTitles:    issues.slice(0, 5).map((i) => i.title),
-    });
+    }, shop);
   }
 
   // 5. Keep last 10 scans — delete oldest beyond limit

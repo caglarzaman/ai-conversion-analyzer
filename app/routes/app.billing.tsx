@@ -2,11 +2,12 @@ import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "re
 import { useLoaderData, useFetcher } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate, MONTHLY_PLAN } from "../shopify.server";
+import { getUsage } from "../services/usage.server";
 
 // ─── Loader ───────────────────────────────────────────────────────────────────
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { billing } = await authenticate.admin(request);
+  const { billing, session } = await authenticate.admin(request);
   const isTest = process.env.NODE_ENV !== "production" || process.env.BILLING_TEST === "true";
 
   const { hasActivePayment, appSubscriptions } = await billing.check({
@@ -15,6 +16,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   });
 
   const sub = appSubscriptions[0] ?? null;
+  const usage = await getUsage(session.shop);
 
   return {
     hasActivePayment,
@@ -27,13 +29,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     subscription: sub
       ? { id: sub.id, name: sub.name, test: sub.test }
       : null,
+    usage,
   };
 };
 
 // ─── Action ───────────────────────────────────────────────────────────────────
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { billing } = await authenticate.admin(request);
+  const { billing, session } = await authenticate.admin(request);
   const isTest = process.env.NODE_ENV !== "production" || process.env.BILLING_TEST === "true";
   const formData = await request.formData();
   const intent = formData.get("intent");
@@ -65,7 +68,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function BillingPage() {
-  const { hasActivePayment, plan, subscription } = useLoaderData<typeof loader>();
+  const { hasActivePayment, plan, subscription, usage } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
 
   const isBusy = fetcher.state !== "idle";
@@ -193,6 +196,29 @@ export default function BillingPage() {
             </div>
           )}
 
+        </s-box>
+      </s-section>
+
+      {/* AI Usage Stats */}
+      <s-section heading="AI Usage This Month">
+        <s-box padding="base" borderWidth="base" borderRadius="base">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "16px" }}>
+            <div style={{ textAlign: "center", padding: "12px" }}>
+              <div style={{ fontSize: "32px", fontWeight: "800", color: "#667eea" }}>{usage.calls}</div>
+              <div style={{ fontSize: "13px", color: "#6d7175", marginTop: "4px" }}>AI Calls</div>
+            </div>
+            <div style={{ textAlign: "center", padding: "12px" }}>
+              <div style={{ fontSize: "32px", fontWeight: "800", color: "#667eea" }}>{usage.tokens.toLocaleString()}</div>
+              <div style={{ fontSize: "13px", color: "#6d7175", marginTop: "4px" }}>Tokens Used</div>
+            </div>
+            <div style={{ textAlign: "center", padding: "12px" }}>
+              <div style={{ fontSize: "32px", fontWeight: "800", color: "#008060" }}>${usage.costUsd}</div>
+              <div style={{ fontSize: "13px", color: "#6d7175", marginTop: "4px" }}>Estimated Cost</div>
+            </div>
+          </div>
+          <div style={{ marginTop: "12px", padding: "10px 14px", background: "#f0faf5", borderRadius: "8px", fontSize: "13px", color: "#008060" }}>
+            💚 Your subscription covers all AI usage. Model: <strong>Claude Haiku</strong> (most cost-efficient).
+          </div>
         </s-box>
       </s-section>
 

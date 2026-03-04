@@ -2,7 +2,6 @@ import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "re
 import { useLoaderData, useFetcher } from "react-router";
 import { authenticate } from "../shopify.server";
 import { boundary } from "@shopify/shopify-app-react-router/server";
-import { analyzeStore } from "../services/ai-analyzer.server";
 import { runFullScan } from "../services/scanner.server";
 import db from "../db.server";
 
@@ -37,18 +36,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     ...lowInventory.map((p) => ({ ...p, riskLevel: "low-inventory" as const })),
   ].slice(0, 20);
 
-  let liveAiInsights: string | null = null;
-  const hasIssues = outOfStock.length > 0 || lowInventory.length > 0 || draft.length > 0;
-  if (hasIssues) {
-    liveAiInsights = await analyzeStore({
-      totalProducts: products.length,
-      outOfStock: outOfStock.length,
-      lowInventory: lowInventory.length,
-      activeProducts: active.length,
-      draftProducts: draft.length,
-      riskyTitles: atRisk.slice(0, 5).map((p) => p.title),
-    });
-  }
+  // No live AI call on page load — zero cost per visit.
+  // AI insights come from the latest scan report instead.
 
   const latestReport = await db.scanReport.findFirst({
     where: { shop: session.shop },
@@ -67,7 +56,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       id: p.id, title: p.title,
       inventory: p.totalInventory, status: p.status as string, riskLevel: p.riskLevel,
     })),
-    liveAiInsights,
     latestReport,
   };
 };
@@ -361,16 +349,12 @@ export default function Index() {
   const {
     conversionScore, totalProducts,
     outOfStockCount, lowInventoryCount, activeCount, draftCount,
-    atRisk, liveAiInsights, latestReport,
+    atRisk, latestReport,
   } = loaderData;
 
   const isScanning = fetcher.state !== "idle";
   const scanReport = fetcher.data?.ok ? fetcher.data.report : latestReport;
   const scanFailed = fetcher.data?.ok === false;
-
-  const aiLines = liveAiInsights
-    ? liveAiInsights.split("\n").map((l) => l.trim()).filter(Boolean)
-    : [];
 
   return (
     <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "28px 20px", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
@@ -455,8 +439,8 @@ export default function Index() {
 
       </div>
 
-      {/* ── AI Insights ── */}
-      {aiLines.length > 0 && (
+      {/* ── AI Insights from latest scan (no cost on page load) ── */}
+      {latestReport && (
         <div className="aca-card" style={{ marginBottom: "20px" }}>
           <h2 className="aca-section-title">
             <span style={{
@@ -464,17 +448,15 @@ export default function Index() {
               width: 32, height: 32, borderRadius: "8px",
               background: "linear-gradient(135deg, #667eea, #764ba2)", fontSize: "16px",
             }}>🤖</span>
-            Live AI Insights
+            AI Insights
             <span className="aca-badge" style={{ background: "#f0f1ff", color: "#5c6ac4", marginLeft: "auto", fontSize: "11px" }}>
-              Powered by Claude
+              From last scan · {new Date(latestReport.createdAt).toLocaleDateString()}
             </span>
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {aiLines.map((line, i) => (
+            {latestReport.aiInsights.split("\n").map((l: string) => l.trim()).filter(Boolean).map((line: string, i: number) => (
               <div key={i} className="aca-insight-line">
-                <span style={{ flexShrink: 0, fontSize: "16px" }}>
-                  {line.startsWith("•") || line.startsWith("-") ? "💡" : "→"}
-                </span>
+                <span style={{ flexShrink: 0, fontSize: "16px" }}>💡</span>
                 <span>{line.replace(/^[•\-]\s*/, "")}</span>
               </div>
             ))}

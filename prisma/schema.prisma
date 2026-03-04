@@ -60,3 +60,31 @@ model ProductIssue {
 
   @@index([reportId])
 }
+
+// Tracks monthly AI usage per shop for cost visibility
+model AiUsage {
+  id        String   @id @default(cuid())
+  shop      String
+  month     String   // "2026-03"
+  calls     Int      @default(0)
+  tokens    Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([shop, month])
+  @@index([shop])
+}
+
+// Stores AI-generated descriptions before/after merchant applies them
+model GeneratedDescription {
+  id          String   @id @default(cuid())
+  shop        String
+  productId   String
+  productTitle String
+  tone        String
+  content     String
+  applied     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([shop])
+  @@index([productId])
+}
