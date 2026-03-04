@@ -1,5 +1,5 @@
 import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useFetcher } from "react-router";
+import { useLoaderData, useFetcher, Form, useNavigation } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate, PRO_PLAN, GROWTH_PLAN } from "../shopify.server";
 import { detectPlan } from "../services/plan.server";
@@ -82,9 +82,11 @@ const PLAN_FEATURES = {
 
 export default function BillingPage() {
   const { plan, usage, testMode } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
+  const fetcher    = useFetcher<typeof action>();   // only used for cancel
+  const navigation = useNavigation();
 
-  const isBusy        = fetcher.state !== "idle";
+  const isNavigating  = navigation.state !== "idle";
+  const isCancelling  = fetcher.state !== "idle";
   const justCancelled = fetcher.data?.cancelled === true;
   const currentPlan   = justCancelled ? "free" : plan;
 
@@ -119,7 +121,8 @@ export default function BillingPage() {
           current={currentPlan === "free"}
           intent={null}
           fetcher={fetcher}
-          isBusy={isBusy}
+          isNavigating={isNavigating}
+          isCancelling={isCancelling}
           showCancel={false}
         />
 
@@ -134,7 +137,8 @@ export default function BillingPage() {
           current={currentPlan === "pro"}
           intent="subscribe-pro"
           fetcher={fetcher}
-          isBusy={isBusy}
+          isNavigating={isNavigating}
+          isCancelling={isCancelling}
           showCancel={currentPlan === "pro"}
         />
 
@@ -149,7 +153,8 @@ export default function BillingPage() {
           current={currentPlan === "growth"}
           intent="subscribe-growth"
           fetcher={fetcher}
-          isBusy={isBusy}
+          isNavigating={isNavigating}
+          isCancelling={isCancelling}
           showCancel={currentPlan === "growth"}
         />
 
@@ -204,11 +209,13 @@ export default function BillingPage() {
 // ─── PlanCard component ───────────────────────────────────────────────────────
 
 function PlanCard({
-  name, price, tagline, features, highlight, badge, current, intent, fetcher, isBusy, showCancel,
+  name, price, tagline, features, highlight, badge, current, intent,
+  fetcher, isNavigating, isCancelling, showCancel,
 }: {
   name: string; price: number | null; tagline: string; features: string[];
   highlight: boolean; badge: string | null; current: boolean;
-  intent: string | null; fetcher: any; isBusy: boolean; showCancel: boolean;
+  intent: string | null; fetcher: any;
+  isNavigating: boolean; isCancelling: boolean; showCancel: boolean;
 }) {
   return (
     <div style={{
@@ -278,16 +285,17 @@ function PlanCard({
       {/* CTA */}
       {current ? (
         showCancel ? (
+          // Cancel uses fetcher (stays on page, no redirect)
           <fetcher.Form method="post">
             <input type="hidden" name="intent" value="cancel" />
-            <button type="submit" disabled={isBusy} style={{
+            <button type="submit" disabled={isCancelling} style={{
               width: "100%", padding: "11px",
               border: "1px solid #e4e5e7", borderRadius: "10px",
               background: "#fff", color: "#6d7175",
               fontSize: "13px", fontWeight: "600", cursor: "pointer",
               transition: "all 0.15s",
             }}>
-              {isBusy ? "Processing..." : "Cancel Plan"}
+              {isCancelling ? "Processing..." : "Cancel Plan"}
             </button>
           </fetcher.Form>
         ) : (
@@ -301,9 +309,11 @@ function PlanCard({
           </div>
         )
       ) : intent ? (
-        <fetcher.Form method="post">
+        // Subscribe uses regular Form — billing.request() throws a redirect that
+        // needs full-page navigation (not XHR/fetcher) to work with App Bridge
+        <Form method="post">
           <input type="hidden" name="intent" value={intent} />
-          <button type="submit" disabled={isBusy} style={{
+          <button type="submit" disabled={isNavigating} style={{
             width: "100%", padding: "11px",
             border: "none", borderRadius: "10px",
             background: highlight
@@ -311,13 +321,13 @@ function PlanCard({
               : "linear-gradient(135deg, #1a1d1f, #3d4145)",
             color: "white",
             fontSize: "13px", fontWeight: "700",
-            cursor: isBusy ? "not-allowed" : "pointer",
-            opacity: isBusy ? 0.7 : 1,
+            cursor: isNavigating ? "not-allowed" : "pointer",
+            opacity: isNavigating ? 0.7 : 1,
             transition: "all 0.15s",
           }}>
-            {isBusy ? "Redirecting..." : `Upgrade to ${name} →`}
+            {isNavigating ? "Redirecting to Shopify..." : `Upgrade to ${name} →`}
           </button>
-        </fetcher.Form>
+        </Form>
       ) : null}
 
     </div>
