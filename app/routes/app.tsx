@@ -11,7 +11,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // Require an active subscription on every authenticated request.
   // If the merchant hasn't subscribed, Shopify redirects them to the
   // billing confirmation page automatically.
-  const isTest = process.env.NODE_ENV !== "production";
+  const isTest = process.env.NODE_ENV !== "production" || process.env.BILLING_TEST === "true";
   const billingCheck = await billing.require({
     plans: [MONTHLY_PLAN],
     isTest,

@@ -7,7 +7,7 @@ import { authenticate, MONTHLY_PLAN } from "../shopify.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { billing } = await authenticate.admin(request);
-  const isTest = process.env.NODE_ENV !== "production";
+  const isTest = process.env.NODE_ENV !== "production" || process.env.BILLING_TEST === "true";
 
   const { hasActivePayment, appSubscriptions } = await billing.check({
     plans: [MONTHLY_PLAN],
@@ -34,7 +34,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { billing } = await authenticate.admin(request);
-  const isTest = process.env.NODE_ENV !== "production";
+  const isTest = process.env.NODE_ENV !== "production" || process.env.BILLING_TEST === "true";
   const formData = await request.formData();
   const intent = formData.get("intent");
 
