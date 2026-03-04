@@ -478,140 +478,129 @@ export default function Index() {
         </div>
       )}
 
-      {/* ── Full Store Scan ── */}
-      <div className="aca-card" style={{ marginBottom: "20px", border: "2px dashed #e4e5e7" }}>
+      {/* ── Scan state / results ── */}
+      {isScanning && (
+        <div className="aca-card" style={{ marginBottom: "20px", textAlign: "center", padding: "48px 20px" }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
+            <div className="aca-spinner" />
+          </div>
+          <div style={{ fontSize: "18px", fontWeight: "700", color: "#1a1d1f", marginBottom: "8px" }}>
+            Scanning your entire store...
+          </div>
+          <div style={{ fontSize: "14px", color: "#6d7175" }}>
+            Fetching all products, detecting issues & generating AI recommendations.
+          </div>
+        </div>
+      )}
 
-        {isScanning ? (
-          <div style={{ textAlign: "center", padding: "48px 20px" }}>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
-              <div className="aca-spinner" />
-            </div>
-            <div style={{ fontSize: "18px", fontWeight: "700", color: "#1a1d1f", marginBottom: "8px" }}>
-              Scanning your entire store...
-            </div>
-            <div style={{ fontSize: "14px", color: "#6d7175" }}>
-              Fetching all products, detecting issues & generating AI recommendations.
+      {!isScanning && !scanReport && (
+        <div style={{
+          marginBottom: "20px", padding: "18px 22px",
+          border: "1.5px dashed #d4d5d8", borderRadius: "14px",
+          display: "flex", alignItems: "center", gap: "14px",
+          background: "#fafbfc",
+        }}>
+          <span style={{ fontSize: "28px" }}>🔍</span>
+          <div>
+            <div style={{ fontSize: "14px", fontWeight: "700", color: "#1a1d1f" }}>No scan yet</div>
+            <div style={{ fontSize: "13px", color: "#6d7175", marginTop: "2px" }}>
+              Click <strong>Scan Store</strong> above to analyze every product — inventory, descriptions, and AI recommendations.
             </div>
           </div>
+          {scanFailed && (
+            <span style={{ marginLeft: "auto", fontSize: "13px", color: "#c0392b", fontWeight: "600" }}>
+              ❌ Last scan failed — try again
+            </span>
+          )}
+        </div>
+      )}
 
-        ) : !scanReport ? (
-          <div style={{ textAlign: "center", padding: "48px 20px" }}>
-            <div style={{ fontSize: "56px", marginBottom: "16px" }}>🔍</div>
-            <div style={{ fontSize: "20px", fontWeight: "700", color: "#1a1d1f", marginBottom: "8px" }}>
-              Run Your First Full Store Scan
-            </div>
-            <div style={{ fontSize: "14px", color: "#6d7175", maxWidth: "440px", margin: "0 auto 24px", lineHeight: "1.7" }}>
-              Analyze every product in your store — inventory health, draft products, and AI-powered conversion suggestions.
-            </div>
-            <fetcher.Form method="post">
-              <button type="submit" className="aca-scan-btn">
-                <span style={{ fontSize: "18px" }}>🚀</span> Start Full Scan
-              </button>
-            </fetcher.Form>
-            {scanFailed && (
-              <div style={{ marginTop: "16px", color: "#c0392b", fontSize: "14px" }}>
-                ❌ Scan failed. Please try again.
+      {!isScanning && scanReport && (
+        <div className="aca-card" style={{ marginBottom: "20px" }}>
+
+          {/* Report meta */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap",
+            marginBottom: "20px", padding: "12px 16px",
+            background: "linear-gradient(135deg, #f6faf8, #edf7f4)",
+            borderRadius: "12px", border: "1px solid #c9ede3",
+          }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: "13px", fontWeight: "700", color: "#1a1d1f" }}>📋 Last Scan Report</div>
+              <div style={{ fontSize: "12px", color: "#6d7175", marginTop: "2px" }}>
+                🕐 {formatDate(scanReport.createdAt)}
               </div>
-            )}
-          </div>
-
-        ) : (
-          <>
-            {/* Report header bar */}
-            <div style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              flexWrap: "wrap", gap: "12px", marginBottom: "24px",
-              padding: "14px 18px",
-              background: "linear-gradient(135deg, #f6faf8, #edf7f4)",
-              borderRadius: "12px",
-              border: "1px solid #c9ede3",
+            </div>
+            <span className="aca-badge" style={{ background: "#e8f5f0", color: "#008060" }}>
+              📦 {scanReport.totalProducts} scanned
+            </span>
+            <span className="aca-badge" style={{
+              background: scanReport.issues.length > 0 ? "#fff0f0" : "#f0faf5",
+              color:      scanReport.issues.length > 0 ? "#c0392b" : "#008060",
             }}>
-              <div>
-                <div style={{ fontSize: "13px", fontWeight: "700", color: "#1a1d1f" }}>📋 Last Scan Report</div>
-                <div style={{ fontSize: "12px", color: "#6d7175", marginTop: "2px" }}>
-                  🕐 {formatDate(scanReport.createdAt)}
-                </div>
+              {scanReport.issues.length > 0 ? `⚠️ ${scanReport.issues.length} issues` : "✅ No issues"}
+            </span>
+          </div>
+
+          {/* Score + AI */}
+          <div className="aca-grid-2" style={{ marginBottom: "20px" }}>
+            <div style={{
+              background: scoreGradient(scanReport.score),
+              borderRadius: "14px", padding: "24px", color: "white",
+              display: "flex", flexDirection: "column", alignItems: "center", gap: "12px",
+            }}>
+              <div style={{ fontSize: "12px", fontWeight: "700", opacity: 0.85, letterSpacing: "0.8px", textTransform: "uppercase" }}>
+                Full Scan Score
               </div>
-              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-                <span className="aca-badge" style={{ background: "#e8f5f0", color: "#008060" }}>
-                  📦 {scanReport.totalProducts} scanned
-                </span>
-                <span className="aca-badge" style={{
-                  background: scanReport.issues.length > 0 ? "#fff0f0" : "#f0faf5",
-                  color: scanReport.issues.length > 0 ? "#c0392b" : "#008060",
-                }}>
-                  {scanReport.issues.length > 0 ? `⚠️ ${scanReport.issues.length} issues` : "✅ No issues"}
-                </span>
+              <div style={{ fontSize: "72px", fontWeight: "800", lineHeight: 1 }}>{scanReport.score}</div>
+              <div style={{ fontSize: "18px", fontWeight: "700" }}>
+                {scoreEmoji(scanReport.score)} {scoreLabel(scanReport.score)}
               </div>
-              <fetcher.Form method="post" style={{ marginLeft: "auto" }}>
-                <button type="submit" className="aca-scan-btn" style={{ padding: "10px 20px", fontSize: "13px" }}>
-                  🔄 Rescan
-                </button>
-              </fetcher.Form>
+              <div style={{ display: "flex", gap: "16px", fontSize: "13px", opacity: 0.9, marginTop: "4px" }}>
+                <span>❌ {scanReport.outOfStock} OOS</span>
+                <span>⚠️ {scanReport.lowInventory} low</span>
+                <span>📝 {scanReport.draftCount} draft</span>
+              </div>
             </div>
 
-            {/* Score + AI side by side */}
-            <div className="aca-grid-2" style={{ marginBottom: "20px" }}>
-
-              <div style={{
-                background: scoreGradient(scanReport.score),
-                borderRadius: "14px", padding: "24px", color: "white",
-                display: "flex", flexDirection: "column", alignItems: "center", gap: "12px",
-              }}>
-                <div style={{ fontSize: "12px", fontWeight: "700", opacity: 0.85, letterSpacing: "0.8px", textTransform: "uppercase" }}>
-                  Full Scan Score
-                </div>
-                <div style={{ fontSize: "72px", fontWeight: "800", lineHeight: 1 }}>{scanReport.score}</div>
-                <div style={{ fontSize: "18px", fontWeight: "700" }}>
-                  {scoreEmoji(scanReport.score)} {scoreLabel(scanReport.score)}
-                </div>
-                <div style={{ display: "flex", gap: "16px", fontSize: "13px", opacity: 0.9, marginTop: "4px" }}>
-                  <span>❌ {scanReport.outOfStock} OOS</span>
-                  <span>⚠️ {scanReport.lowInventory} low</span>
-                  <span>📝 {scanReport.draftCount} draft</span>
-                </div>
+            <div style={{ background: "#f8f9ff", borderRadius: "14px", padding: "24px" }}>
+              <div style={{ fontSize: "14px", fontWeight: "700", color: "#1a1d1f", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  width: 28, height: 28, borderRadius: "6px",
+                  background: "linear-gradient(135deg, #667eea, #764ba2)", fontSize: "14px",
+                }}>🤖</span>
+                AI Recommendations
               </div>
-
-              <div style={{ background: "#f8f9ff", borderRadius: "14px", padding: "24px" }}>
-                <div style={{ fontSize: "14px", fontWeight: "700", color: "#1a1d1f", marginBottom: "12px", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{
-                    display: "inline-flex", alignItems: "center", justifyContent: "center",
-                    width: 28, height: 28, borderRadius: "6px",
-                    background: "linear-gradient(135deg, #667eea, #764ba2)", fontSize: "14px",
-                  }}>🤖</span>
-                  AI Recommendations
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {scanReport.aiInsights
-                    .split("\n")
-                    .map((l: string) => l.trim())
-                    .filter(Boolean)
-                    .map((line: string, i: number) => (
-                      <div key={i} className="aca-insight-line" style={{ background: "white" }}>
-                        <span style={{ flexShrink: 0 }}>💡</span>
-                        <span>{line.replace(/^[•\-]\s*/, "")}</span>
-                      </div>
-                    ))}
-                </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {scanReport.aiInsights
+                  .split("\n")
+                  .map((l: string) => l.trim())
+                  .filter(Boolean)
+                  .map((line: string, i: number) => (
+                    <div key={i} className="aca-insight-line" style={{ background: "white" }}>
+                      <span style={{ flexShrink: 0 }}>💡</span>
+                      <span>{line.replace(/^[•\-]\s*/, "")}</span>
+                    </div>
+                  ))}
               </div>
-
             </div>
+          </div>
 
-            {/* Issues table */}
-            {scanReport.issues.length > 0 && (
-              <div>
-                <h3 style={{ margin: "0 0 12px", fontSize: "15px", fontWeight: "700", color: "#1a1d1f" }}>
-                  ⚠️ Detected Issues ({scanReport.issues.length})
-                </h3>
-                <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid #e4e5e7" }}>
-                  <IssueTable issues={scanReport.issues} />
-                </div>
+          {/* Issues table */}
+          {scanReport.issues.length > 0 && (
+            <div>
+              <h3 style={{ margin: "0 0 12px", fontSize: "15px", fontWeight: "700", color: "#1a1d1f" }}>
+                ⚠️ Detected Issues ({scanReport.issues.length})
+              </h3>
+              <div style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid #e4e5e7" }}>
+                <IssueTable issues={scanReport.issues} />
               </div>
-            )}
-          </>
-        )}
+            </div>
+          )}
 
-      </div>
+        </div>
+      )}
 
     </div>
   );
