@@ -7,8 +7,8 @@ WORKDIR /app
 
 COPY package.json package-lock.json* ./
 
-# Install ALL dependencies (dev included) so vite + react-router build tools are available.
-# postinstall automatically runs `prisma generate` here.
+# Install ALL dependencies (dev included) so vite + react-router build tools
+# are available. postinstall automatically runs `prisma generate`.
 RUN npm ci
 
 COPY . .
@@ -16,7 +16,8 @@ COPY . .
 # Build the app, then strip devDependencies to keep the image lean.
 RUN npm run build && npm prune --omit=dev
 
-# Set production env at runtime, not during build.
+# Set production env and SQLite path at runtime.
 ENV NODE_ENV=production
+ENV DATABASE_URL="file:/app/prisma/dev.sqlite"
 
 CMD ["npm", "run", "docker-start"]
