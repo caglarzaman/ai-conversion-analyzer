@@ -24,7 +24,11 @@ api_version = "2026-04"
 scopes = "write_metaobject_definitions,write_metaobjects,write_products"
 
 [auth]
-redirect_urls = [ "https://ai-conversion-analyzer-production.up.railway.app/api/auth" ]
+redirect_urls = [
+  "https://ai-conversion-analyzer-production.up.railway.app/auth/callback",
+  "https://ai-conversion-analyzer-production.up.railway.app/auth/shopify/callback",
+  "https://ai-conversion-analyzer-production.up.railway.app/api/auth/callback"
+]
 
 [product.metafields.app.demo_info]
 type = "single_line_text_field"

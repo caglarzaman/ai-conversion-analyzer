@@ -8,9 +8,17 @@ interface Product {
   title: string;
   totalInventory: number;
   status: string;
+  hasDescription: boolean;
+  hasImages: boolean;
 }
 
-export type IssueType = "out-of-stock" | "low-inventory" | "draft";
+export type IssueType =
+  | "out-of-stock"
+  | "low-inventory"
+  | "draft"
+  | "no-description"
+  | "no-images"
+  | "short-title";
 
 interface ScanIssue {
   productId: string;
@@ -42,12 +50,14 @@ async function fetchAllProducts(admin: any): Promise<Product[]> {
               title
               totalInventory
               status
+              descriptionHtml
+              images(first: 1) {
+                edges { node { url } }
+              }
             }
             cursor
           }
-          pageInfo {
-            hasNextPage
-          }
+          pageInfo { hasNextPage }
         }
       }`,
       { variables: { first: PAGE_SIZE, after: cursor } }
@@ -56,7 +66,19 @@ async function fetchAllProducts(admin: any): Promise<Product[]> {
     const data = await response.json();
     const edges: any[] = data.data.products.edges;
 
-    products.push(...edges.map((e) => e.node as Product));
+    products.push(
+      ...edges.map((e) => ({
+        id: e.node.id,
+        title: e.node.title,
+        totalInventory: e.node.totalInventory,
+        status: e.node.status,
+        hasDescription:
+          !!e.node.descriptionHtml &&
+          e.node.descriptionHtml.replace(/<[^>]+>/g, "").trim().length > 20,
+        hasImages: e.node.images.edges.length > 0,
+      }))
+    );
+
     hasNextPage = data.data.products.pageInfo.hasNextPage;
     cursor = edges.length > 0 ? edges[edges.length - 1].cursor : null;
     page++;
@@ -71,24 +93,51 @@ function detectIssues(products: Product[]): ScanIssue[] {
   const issues: ScanIssue[] = [];
 
   for (const p of products) {
+    // Inventory issues (only for active products)
     if (p.totalInventory === 0 && p.status === "ACTIVE") {
       issues.push({ productId: p.id, title: p.title, inventory: p.totalInventory, status: p.status, issueType: "out-of-stock" });
-    } else if (p.totalInventory > 0 && p.totalInventory < 5) {
+    } else if (p.totalInventory > 0 && p.totalInventory < 5 && p.status === "ACTIVE") {
       issues.push({ productId: p.id, title: p.title, inventory: p.totalInventory, status: p.status, issueType: "low-inventory" });
-    } else if (p.status === "DRAFT") {
+    }
+
+    // Draft
+    if (p.status === "DRAFT") {
       issues.push({ productId: p.id, title: p.title, inventory: p.totalInventory, status: p.status, issueType: "draft" });
+    }
+
+    // SEO issues (check all products)
+    if (!p.hasDescription) {
+      issues.push({ productId: p.id, title: p.title, inventory: p.totalInventory, status: p.status, issueType: "no-description" });
+    }
+    if (!p.hasImages) {
+      issues.push({ productId: p.id, title: p.title, inventory: p.totalInventory, status: p.status, issueType: "no-images" });
+    }
+    if (p.title.trim().length < 20) {
+      issues.push({ productId: p.id, title: p.title, inventory: p.totalInventory, status: p.status, issueType: "short-title" });
     }
   }
 
-  // Sort by severity: out-of-stock → low-inventory → draft
-  const priority: Record<IssueType, number> = { "out-of-stock": 0, "low-inventory": 1, draft: 2 };
+  // Sort by severity
+  const priority: Record<IssueType, number> = {
+    "out-of-stock":   0,
+    "low-inventory":  1,
+    draft:            2,
+    "no-description": 3,
+    "no-images":      4,
+    "short-title":    5,
+  };
   return issues.sort((a, b) => priority[a.issueType] - priority[b.issueType]);
 }
 
 // ─── Score formula ────────────────────────────────────────────────────────────
 
-function computeScore(oos: number, low: number, draft: number): number {
-  return Math.max(0, Math.min(100, 100 - oos * 10 - low * 5 - draft * 2));
+function computeScore(issues: ScanIssue[]): number {
+  const oos   = issues.filter((i) => i.issueType === "out-of-stock").length;
+  const low   = issues.filter((i) => i.issueType === "low-inventory").length;
+  const draft = issues.filter((i) => i.issueType === "draft").length;
+  const seo   = issues.filter((i) => ["no-description", "no-images", "short-title"].includes(i.issueType)).length;
+
+  return Math.max(0, Math.min(100, 100 - oos * 10 - low * 5 - draft * 2 - seo * 3));
 }
 
 // ─── Main orchestrator ────────────────────────────────────────────────────────
@@ -105,12 +154,12 @@ export async function runFullScan(admin: any, shop: string) {
   const draftCount        = issues.filter((i) => i.issueType === "draft").length;
   const activeCount       = products.filter((p) => p.status === "ACTIVE").length;
 
-  // 3. Compute score
-  const score = computeScore(outOfStockCount, lowInventoryCount, draftCount);
+  // 3. Score
+  const score = computeScore(issues);
 
-  // 4. AI — one call for the whole store, skipped when healthy
-  const hasIssues = outOfStockCount > 0 || lowInventoryCount > 0 || draftCount > 0;
-  let aiInsights = "Your store is in great shape — no conversion issues detected.";
+  // 4. AI — one call, skipped when healthy
+  const hasIssues = issues.length > 0;
+  let aiInsights = "Your store is in great shape — no conversion or SEO issues detected.";
 
   if (hasIssues) {
     aiInsights = await analyzeStore({
@@ -123,9 +172,18 @@ export async function runFullScan(admin: any, shop: string) {
     });
   }
 
-  // 5. Persist report (delete previous reports for this shop first to keep DB lean)
-  await db.scanReport.deleteMany({ where: { shop } });
+  // 5. Keep last 10 scans — delete oldest beyond limit
+  const existing = await db.scanReport.findMany({
+    where: { shop },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+  if (existing.length >= 10) {
+    const toDelete = existing.slice(9).map((r) => r.id);
+    await db.scanReport.deleteMany({ where: { id: { in: toDelete } } });
+  }
 
+  // 6. Save new report
   const report = await db.scanReport.create({
     data: {
       shop,

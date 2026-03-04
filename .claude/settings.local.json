@@ -4,7 +4,9 @@
       "Bash(npx prisma:*)",
       "mcp__shopify-dev-mcp__learn_shopify_api",
       "mcp__shopify-dev-mcp__search_docs_chunks",
-      "Bash(railway version:*)"
+      "Bash(railway version:*)",
+      "Bash(npx shopify:*)",
+      "Bash(railway:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

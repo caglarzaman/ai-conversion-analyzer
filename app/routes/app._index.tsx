@@ -280,14 +280,17 @@ function StatCard({
 
 function IssueTag({ type }: { type: string }) {
   const map: Record<string, { label: string; bg: string; color: string }> = {
-    "out-of-stock":  { label: "Out of Stock",  bg: "#fff0f0", color: "#c0392b" },
-    "low-inventory": { label: "Low Inventory", bg: "#fff8ed", color: "#b97d00" },
-    draft:           { label: "Draft",         bg: "#f4f6f8", color: "#5c6ac4" },
+    "out-of-stock":   { label: "Out of Stock",  bg: "#fff0f0", color: "#c0392b" },
+    "low-inventory":  { label: "Low Inventory", bg: "#fff8ed", color: "#b97d00" },
+    draft:            { label: "Draft",         bg: "#f0f1ff", color: "#5c6ac4" },
+    "no-description": { label: "No Desc",       bg: "#f4f6f8", color: "#6d7175" },
+    "no-images":      { label: "No Images",     bg: "#f4f6f8", color: "#6d7175" },
+    "short-title":    { label: "Short Title",   bg: "#f4f6f8", color: "#6d7175" },
   };
   const s = map[type] ?? { label: type, bg: "#f4f6f8", color: "#6d7175" };
   return (
     <span className="aca-badge" style={{ background: s.bg, color: s.color }}>
-      {type === "out-of-stock" ? "❌" : type === "low-inventory" ? "⚠️" : "📝"} {s.label}
+      {type === "out-of-stock" ? "❌" : type === "low-inventory" ? "⚠️" : type === "draft" ? "📝" : type === "no-description" ? "📄" : type === "no-images" ? "🖼️" : "✏️"} {s.label}
     </span>
   );
 }
