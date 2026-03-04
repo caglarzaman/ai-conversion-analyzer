@@ -36,8 +36,10 @@ export default function App() {
     <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
         <s-link href="/app">Dashboard</s-link>
-        <s-link href="/app/generate">✨ Description Generator</s-link>
-        <s-link href="/app/products">AI Product Analysis</s-link>
+        <s-link href="/app/bulk-analysis">Bulk Analysis</s-link>
+        <s-link href="/app/generate">Description Generator</s-link>
+        <s-link href="/app/products">Product AI</s-link>
+        <s-link href="/app/weekly-report">Weekly Report</s-link>
         <s-link href="/app/history">Scan History</s-link>
         <s-link href="/app/billing">Billing</s-link>
       </s-app-nav>

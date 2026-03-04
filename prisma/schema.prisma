@@ -74,6 +74,36 @@ model AiUsage {
   @@index([shop])
 }
 
+// Per-product bulk analysis results (upserted on each run)
+model ProductAnalysis {
+  id              String   @id @default(cuid())
+  shop            String
+  productId       String
+  productTitle    String
+  conversionScore Int
+  seoScore        Int
+  topIssue        String
+  quickFix        String
+  applied         Boolean  @default(false)
+  analyzedAt      DateTime @default(now())
+
+  @@unique([shop, productId])
+  @@index([shop])
+}
+
+// Weekly AI-generated store reports
+model WeeklyReport {
+  id        String   @id @default(cuid())
+  shop      String
+  weekOf    String   // e.g. "2026-W10"
+  summary   String
+  data      String   // JSON blob
+  createdAt DateTime @default(now())
+
+  @@unique([shop, weekOf])
+  @@index([shop])
+}
+
 // Stores AI-generated descriptions before/after merchant applies them
 model GeneratedDescription {
   id          String   @id @default(cuid())
