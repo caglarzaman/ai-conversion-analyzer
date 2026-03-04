@@ -6,6 +6,8 @@ EXPOSE 3000
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
+# Copy schema before npm ci so postinstall (`prisma generate`) can find it.
+COPY prisma ./prisma
 
 # Install ALL dependencies (dev included) so vite + react-router build tools
 # are available. postinstall automatically runs `prisma generate`.
