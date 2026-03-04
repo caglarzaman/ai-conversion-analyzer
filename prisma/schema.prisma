@@ -32,3 +32,31 @@ model Session {
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
+
+model ScanReport {
+  id            String         @id @default(cuid())
+  shop          String
+  createdAt     DateTime       @default(now())
+  score         Int
+  aiInsights    String
+  totalProducts Int
+  outOfStock    Int
+  lowInventory  Int
+  draftCount    Int
+  issues        ProductIssue[]
+
+  @@index([shop])
+}
+
+model ProductIssue {
+  id        String     @id @default(cuid())
+  reportId  String
+  report    ScanReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  productId String
+  title     String
+  inventory Int
+  status    String
+  issueType String
+
+  @@index([reportId])
+}
