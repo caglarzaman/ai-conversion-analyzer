@@ -330,9 +330,11 @@ export default function Index() {
                 Run a full scan to analyze every product in your store, detect all conversion issues, and get personalized AI recommendations.
               </s-paragraph>
               <div>
-                <s-button onclick={() => fetcher.submit({}, { method: "post" })}>
-                  {scanReport ? "Rescan Store" : "Scan Store"}
-                </s-button>
+                <fetcher.Form method="post">
+                  <s-button type="submit">
+                    {scanReport ? "Rescan Store" : "Scan Store"}
+                  </s-button>
+                </fetcher.Form>
               </div>
               {scanFailed && (
                 <s-paragraph>❌ Scan failed. Please try again.</s-paragraph>
