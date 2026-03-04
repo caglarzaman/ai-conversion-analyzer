@@ -8,7 +8,12 @@ import {
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
 
-export const MONTHLY_PLAN = "AI Conversion Analyzer — Pro Plan";
+export const FREE_PLAN   = "Free";
+export const PRO_PLAN    = "AI Conversion Analyzer — Pro";
+export const GROWTH_PLAN = "AI Conversion Analyzer — Growth";
+
+/** @deprecated use PRO_PLAN */
+export const MONTHLY_PLAN = PRO_PLAN;
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
@@ -23,13 +28,14 @@ const shopify = shopifyApp({
     expiringOfflineAccessTokens: true,
   },
   billing: {
-    [MONTHLY_PLAN]: {
+    [PRO_PLAN]: {
       lineItems: [
-        {
-          amount: 19,
-          currencyCode: "USD",
-          interval: BillingInterval.Every30Days,
-        },
+        { amount: 19, currencyCode: "USD", interval: BillingInterval.Every30Days },
+      ],
+    },
+    [GROWTH_PLAN]: {
+      lineItems: [
+        { amount: 39, currencyCode: "USD", interval: BillingInterval.Every30Days },
       ],
     },
   },

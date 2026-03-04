@@ -361,27 +361,23 @@ export default function Index() {
       <style>{globalCss}</style>
 
       {/* ── Header ── */}
-      <div style={{ marginBottom: "28px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: "26px", fontWeight: "800", color: "#1a1d1f", letterSpacing: "-0.5px" }}>
-              🛍️ AI Conversion Analyzer
-            </h1>
-            <p style={{ margin: "4px 0 0", fontSize: "14px", color: "#6d7175" }}>
-              Real-time insights for your Shopify store · {totalProducts} products loaded
-            </p>
-          </div>
-
-          {/* Scan button in header */}
-          <fetcher.Form method="post">
-            <button type="submit" className="aca-scan-btn" disabled={isScanning}>
-              {isScanning
-                ? <><div className="aca-spinner" style={{ width: 18, height: 18, borderWidth: 3 }} /> Scanning...</>
-                : <><span style={{ fontSize: "18px" }}>🔍</span> {scanReport ? "Rescan Store" : "Scan Full Store"}</>
-              }
-            </button>
-          </fetcher.Form>
+      <div style={{ marginBottom: "28px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: "22px", fontWeight: "800", color: "#1a1d1f", letterSpacing: "-0.4px" }}>
+            Dashboard
+          </h1>
+          <p style={{ margin: "4px 0 0", fontSize: "14px", color: "#6d7175" }}>
+            {totalProducts} products · real-time overview
+          </p>
         </div>
+        <fetcher.Form method="post">
+          <button type="submit" className="aca-scan-btn" disabled={isScanning}>
+            {isScanning
+              ? <><div className="aca-spinner" style={{ width: 18, height: 18, borderWidth: 3 }} /> Scanning...</>
+              : <><span style={{ fontSize: "16px" }}>🔍</span> {scanReport ? "Rescan Store" : "Scan Full Store"}</>
+            }
+          </button>
+        </fetcher.Form>
       </div>
 
       {/* ── Score + Stats ── */}

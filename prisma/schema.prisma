@@ -74,6 +74,14 @@ model AiUsage {
   @@index([shop])
 }
 
+// Tracks free-plan analysis usage (resets each month)
+model FreeUsage {
+  shop      String   @id
+  month     String   // "2026-03"
+  analyses  Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
 // Per-product bulk analysis results (upserted on each run)
 model ProductAnalysis {
   id              String   @id @default(cuid())
