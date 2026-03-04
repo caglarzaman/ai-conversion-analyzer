@@ -2,7 +2,7 @@
 
 client_id = "dd567d99583af564f6655dbc40362200"
 name = "AI Conversion Analyzer"
-application_url = "https://example.com"
+application_url = "https://ai-conversion-analyzer-production.up.railway.app"
 embedded = true
 
 [build]
@@ -25,7 +25,7 @@ api_version = "2026-04"
 scopes = "write_metaobject_definitions,write_metaobjects,write_products"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [ "https://ai-conversion-analyzer-production.up.railway.app/api/auth" ]
 
 [product.metafields.app.demo_info]
 type = "single_line_text_field"
